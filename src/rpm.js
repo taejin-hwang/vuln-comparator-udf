@@ -17,7 +17,6 @@ function isAlpha(ch){
         return true;
     return false;
 }
-
 function rpmVersionCompare(vA, vB) {
     if (vA == vB) return 0;
     var iA = 0;
@@ -51,6 +50,14 @@ function rpmVersionCompare(vA, vB) {
             continue;
         }
 
+        if (chA == '~' && chB == '~') {
+            iA++;
+            iB++;
+            continue;
+        }
+        if (chA == '~') return -1;
+        if (chB == '~') return 1;
+
         if (iA == vA.length || iB == vB.length) break;
 
         iAx = iA;
@@ -66,8 +73,6 @@ function rpmVersionCompare(vA, vB) {
             while (iBx < vB.length && isAlpha(vB.charAt(iBx))) iBx++;
             isnum = 0;
         }
-        var oldch1 = iAx;
-        var oldch2 = iBx;
 
         if (iA == iAx) return -1;
         if (iB == iBx) return (isnum ? 1: -1);
@@ -76,14 +81,13 @@ function rpmVersionCompare(vA, vB) {
             while (vA.charAt(iA) == '0') iA++;
             while (vB.charAt(iB) == '0') iB++;
         }
-        lenA = iAx - iA;
-        lenB = iBx - iB;
+        var lenA = iAx - iA;
+        var lenB = iBx - iB;
         if (lenA > lenB) return 1;
         if (lenA < lenB) return -1;
 
-        str1 = vA.substring(iA, iAx);
-        str2 = vB.substring(iB, iBx);
-        rc = (str1 > str2);
+        var str1 = vA.substring(iA, iAx);
+        var str2 = vB.substring(iB, iBx);
         if (str1 > str2 ) return 1;
         if (str1 < str2) return -1;
         iA = iAx;
@@ -115,7 +119,7 @@ function rpmParse(VER) {
     }
     return v;
 }
-function RPM_COMPARE(VER1, VER2) {
+function compare(VER1, VER2) {
     var v1 = rpmParse(VER1);
     var v2 = rpmParse(VER2);
     if (v2.version == '#MAXV#' && v1.version == '#MAXV#')
@@ -136,4 +140,4 @@ function RPM_COMPARE(VER1, VER2) {
     }
     return ret;
 }
-module.exports = RPM_COMPARE;
+module.exports = compare;
