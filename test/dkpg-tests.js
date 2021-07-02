@@ -9,6 +9,8 @@ describe("Zero Padding Tests", function() {
         expect(compare('1:1.4', '01:01.4')).to.equal(0);
         expect(compare('2:3.01', '02:03.1')).to.equal(0);
         expect(compare('1:1.0', '01:01.0')).to.equal(0);
+        expect(compare('0001:1.0', '01:01.0')).to.equal(0);
+        expect(compare('0001:1.4', '01:01.00004')).to.equal(0);
     });
 
     it("Less Than Tests", function () {
@@ -65,5 +67,6 @@ describe("Assorted Inequality Tests", function() {
         expect(compare('1.0.1+v1', '1.0.0+v10')).to.equal(1);
         expect(compare('2.11-9', '2.10-18+deb7u4')).to.equal(1);
         expect(compare('2:1.1235-1', '2:1.1234-4')).to.equal(1);
+        expect(compare('asdf', 'dsdsf')).to.equal(-1);
     });
 });

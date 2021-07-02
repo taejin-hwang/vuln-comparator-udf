@@ -40,6 +40,15 @@ function rpmVersionCompare(vA, vB) {
                 break;
             iB++;
         }
+
+        if (chA == '~' || chB == '~') {
+            if (chA == '~') return -1;
+            if (chB == '~') return 1;
+            iA++;
+            iB++;
+            continue;
+        }
+
         if (chA == '^' || chB == '^') {
             if (iA == vA.length) return -1;
             if (iB == vB.length) return 1;
@@ -49,14 +58,6 @@ function rpmVersionCompare(vA, vB) {
             iB++;
             continue;
         }
-
-        if (chA == '~' && chB == '~') {
-            iA++;
-            iB++;
-            continue;
-        }
-        if (chA == '~') return -1;
-        if (chB == '~') return 1;
 
         if (iA == vA.length || iB == vB.length) break;
 

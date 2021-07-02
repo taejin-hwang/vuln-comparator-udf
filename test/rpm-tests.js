@@ -95,5 +95,7 @@ describe("Sanity Tests", function() {
         expect(compare('1.0^git1', '1.0^git1~pre')).to.equal(1);
         expect(compare('1.0^git1~pre', '1.0^git1')).to.equal(-1);
         expect(compare('4.2.10-11', '4.2-11')).to.equal(1);
+        expect(compare('4.3-2', '4.3.1-2')).to.equal(1);
+        expect(compare('1.2p1-pre', '1.2-pre')).to.equal(-1);
     })
 });
