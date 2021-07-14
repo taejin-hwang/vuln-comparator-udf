@@ -122,14 +122,17 @@ function groups_to_ver(groups) {
     return VER;
 }
 
+function copy_and_map(arr, f) {
+    var copied = [];
+    for (var i = 0; i < arr.length; i++) {
+        copied.push(f(arr[i]));
+    }
+    return copied;
+}
+
 function normalize(ver_split) {
     const len = ver_split.length;
-    var copy = ver_split.slice();
-
-    for (var i = 0; i < ver_split.length; i++) {
-        copy[i] = parseInt(ver_split[i]);
-    }
-
+    var copy = copy_and_map(ver_split.slice(), parseInt);
     for (var j = len -1; j >= 0; j--) {
         if (ver_split[j] == null || ver_split[j] === "0") {
             copy = copy.slice(0, j);
@@ -139,6 +142,23 @@ function normalize(ver_split) {
     }
     
     return copy;
+}
+
+function pad(arr, k) {
+    var diff = k - arr.length;
+    if (diff <= 0) {
+        return arr;
+    }
+
+    var padded = copy_and_map(arr, identity);
+    for (var i = 0; i < diff; i++) {
+        padded.push(0);
+    }
+    return padded;
+}
+
+function identity(x) {
+    return x;
 }
 
 function parse_local(local) {
@@ -152,25 +172,15 @@ function parse_local(local) {
 }
 
 function compare(a, b) {
-    var typeA = detectType(a);
-    var typeB = detectType(b);
+    var typeA = typeof a;
+    var typeB = typeof b;
 
-    var constMap = {
-        "null" : -1,
-        "#MINV" : -1,
-        "#MAXV" : 1
-    }
-
-    for (const key of Object.keys(constMap)) {
-        if (compare_constant(typeA, typeB, key, constMap[key]) != null) {
-            return compare_constant(typeA, typeB, key, constMap[key]);
-        }
-    }
-
-    if (typeA === "object" && typeB === "object") {
+    if (isConstant(a) || isConstant(b)) {
+        return compare_constants(a, b);
+    } else if (typeA === "object" && typeB === "object") {
         return compare_object(a, b);
     } else {
-        return compare_single(a, b);
+        return compare_single(a, b, false);
     }
 }
 
@@ -179,34 +189,51 @@ function compare_object(objA, objB) {
     var valB = Object.values(objB);
 
     for (var i = 0; i < Math.min(valA.length, valB.length); i++) {
-        if (compare_single(valA[i], valB[i]) !== 0) {
-            return compare_single(valA[i], valB[i]);
+        if (compare_single(valA[i], valB[i], false) !== 0) {
+            return compare_single(valA[i], valB[i], false);
         }
     }
 
-    return compare_single(valA.length, valB.length);
+    return 0;
 }
 
-function compare_constant(typeA, typeB, constant, sign) {
-    if (typeA === constant && typeB !== constant) {
+function compare_constants(a, b) {
+    var constMap = {
+        "null" : -1,
+        "#MINV" : -1,
+        "#MAXV" : 1
+    }
+
+    for (const key of Object.keys(constMap)) {
+        if (compare_constant(a, b, key, constMap[key]) != null) {
+            return compare_constant(a, b, key, constMap[key]);
+        }
+    }
+    return null;
+}
+
+function compare_constant(a, b, constant, sign) {
+    if (a === constant && b !== constant) {
         return sign;
-    } else if (typeA !== constant && typeB === constant) {
+    } else if (a !== constant && b === constant) {
         return -sign;
-    } else if (typeA === constant && typeB === constant) {
+    } else if (a === constant && b === constant) {
         return 0;
     } else {
         return null;
     }
 }
 
-function compare_single(a, b) {
+function compare_single(a, b, local) {
     var typeA = typeof a;
     var typeB = typeof b;
 
+    var sign = local ? -1 : 1;
+
     if (typeA === "string" && typeB === "number") {
-        return -1;
+        return sign;
     } else if (typeA === "number" && typeB === "string") {
-        return 1;
+        return -sign;
     } else {
         if (a < b) {
             return -1;
@@ -216,6 +243,23 @@ function compare_single(a, b) {
             return 0;
         }
     }
+}
+
+function compare_local(a, b) {
+    var typeA = typeof a;
+    var typeB = typeof b;
+
+    if (isConstant(a) || isConstant(b)) {
+        return compare_constants(typeA, typeB);
+    }
+
+    for (var i = 0; i < Math.min(a.length, b.length); i++) {
+        if (compare_single(a[i], b[i], true)) {
+            return compare_single(a[i], b[i], true);
+        }
+    }
+
+    return compare_single(a.length, b.length, false);
 }
 
 function isNull(obj) {
@@ -229,19 +273,8 @@ function isNull(obj) {
     }
 }
 
-function detectType(value) {
-    if (value == null) return "null";
-    if (value === "#MAXV") return "#MAXV";
-    if (value === "#MINV") return "#MINV";
-
-    switch (typeof value) {
-        case "string":
-            return "str";
-        case "number":
-            return "num";
-        case "object":
-            return "object";
-    }
+function isConstant(obj) {
+    return obj == null || obj === "#MAXV" || obj === "#MINV";
 }
 
 function PY_COMPARE(a, b) {
@@ -251,7 +284,13 @@ function PY_COMPARE(a, b) {
     var v1 = parse(a);
     var v2 = parse(b);
 
+    v1.release = pad(v1.release, v2.release.length);
+    v2.release = pad(v2.release, v1.release.length);
+
     for (const key of Object.keys(v1)) {
+        if (key === "local" && compare_local(v1[key], v2[key])) {
+            return compare_local(v1[key], v2[key]);
+        }
         if (compare(v1[key], v2[key])) {
             return compare(v1[key], v2[key]);
         }
