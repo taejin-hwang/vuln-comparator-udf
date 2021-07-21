@@ -1,4 +1,5 @@
 function parse(VER) {
+    VER = standardize(VER);
     var matches = VER.match(
         new RegExp(
         `^v?([0-9]+(\\.[0-9]+)*)` +
@@ -7,6 +8,26 @@ function parse(VER) {
         `?$`, "i")
     );
     return matches != null ? groups_to_ver(matches) : null;
+}
+
+function standardize(VER) {
+    var release = VER.match("\\.RELEASE");
+    if (release != null) {
+        VER = VER.substr(0, release.index);
+    }
+
+
+    var suffix = VER.match("\\.[A-Za-z]");
+    if (suffix != null) {
+        VER = VER.substr(0, suffix.index) + VER.substr(suffix.index+1)
+    }
+
+    var expr = new RegExp("^(RELEASE\\.)", "i");
+    if (VER.match(expr) != null) {
+        VER = VER.replace(expr, "");
+    }
+
+    return VER;
 }
 
 function groups_to_ver(matches) {
@@ -125,7 +146,12 @@ function isNull(obj) {
 function SEMVER_COMPARE(a, b) {
     if (a === b) {
         return 0;
+    } else if (a === "#MAXV#") {
+        return 1;
+    } else if (b === "#MAXV#") {
+        return -1;
     }
+
     var v1 = parse(a);
     var v2 = parse(b);
 
