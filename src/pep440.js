@@ -280,7 +280,12 @@ function isConstant(obj) {
 function PY_COMPARE(a, b) {
     if (a === b) {
         return 0;
+    } else if (a === "#MAXV#") {
+        return 1;
+    } else if (b === "#MAXV#") {
+        return -1;
     }
+
     var v1 = parse(a);
     var v2 = parse(b);
 
