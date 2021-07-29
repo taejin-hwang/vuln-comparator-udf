@@ -16,10 +16,9 @@ function standardize(VER) {
         VER = VER.substr(0, release.index);
     }
 
-
     var suffix = VER.match("\\.[A-Za-z]");
     if (suffix != null) {
-        VER = VER.substr(0, suffix.index) + VER.substr(suffix.index+1)
+        VER = VER.substr(0, suffix.index) + "-" + VER.substr(suffix.index+1)
     }
 
     var expr = new RegExp("^(RELEASE\\.)", "i");
