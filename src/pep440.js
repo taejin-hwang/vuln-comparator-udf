@@ -246,11 +246,8 @@ function compare_single(a, b, local) {
 }
 
 function compare_local(a, b) {
-    var typeA = typeof a;
-    var typeB = typeof b;
-
     if (isConstant(a) || isConstant(b)) {
-        return compare_constants(typeA, typeB);
+        return compare_constants(a, b);
     }
 
     for (var i = 0; i < Math.min(a.length, b.length); i++) {
